@@ -78,7 +78,6 @@ static enum power_supply_property sec_battery_props[] = {
 	POWER_SUPPLY_PROP_VOLTAGE_AVG,
 	POWER_SUPPLY_PROP_CURRENT_NOW,
 	POWER_SUPPLY_PROP_CURRENT_AVG,
-	POWER_SUPPLY_PROP_CURRENT_MAX,
 	POWER_SUPPLY_PROP_CHARGE_NOW,
 	POWER_SUPPLY_PROP_CAPACITY,
 	POWER_SUPPLY_PROP_TEMP,
@@ -1495,7 +1494,7 @@ static int sec_bat_get_current_average(
 				battery->current_now);
 		curr_avg = -1;
 	} else {
-		curr_avg = battery->current_avg;
+		curr_avg = battery->current_now;
 	}
 
 	return curr_avg;
@@ -1529,6 +1528,16 @@ static void sec_bat_get_battery_info(
 		POWER_SUPPLY_PROP_VOLTAGE_AVG, value);
 	battery->voltage_ocv = value.intval;
 
+	/*
+	psy_do_property("sec-fuelgauge", get,
+		POWER_SUPPLY_PROP_CURRENT_NOW, value);
+	battery->current_now = value.intval;
+
+	psy_do_property("sec-fuelgauge", get,
+		POWER_SUPPLY_PROP_CURRENT_AVG, value);
+	battery->current_avg = value.intval;
+	*/
+
 	/* To get SOC value (NOT raw SOC), need to reset value */
 	value.intval = 0;
 	psy_do_property("sec-fuelgauge", get,
@@ -1539,14 +1548,6 @@ static void sec_bat_get_battery_info(
 	psy_do_property("sec-charger", get,
 			POWER_SUPPLY_PROP_CURRENT_NOW, value);
 	battery->current_now = value.intval;
-
-	psy_do_property("sec-charger", get,
-		POWER_SUPPLY_PROP_CURRENT_MAX, value);
-	battery->current_max = value.intval;
-
-	psy_do_property("sec-charger", get,
-		POWER_SUPPLY_PROP_CURRENT_AVG, value);
-	battery->current_avg = value.intval;
 	battery->current_avg = sec_bat_get_current_average(battery);
 
 	switch (battery->pdata->thermal_source) {
@@ -2729,13 +2730,10 @@ static int sec_bat_get_property(struct power_supply *psy,
 		val->intval = battery->voltage_avg * 1000;
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
-		val->intval = battery->current_now * 1000;
+		val->intval = battery->current_now;
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_AVG:
-		val->intval = battery->current_avg * 1000;
-		break;
-	case POWER_SUPPLY_PROP_CURRENT_MAX:
-		val->intval = battery->current_max * 1000;
+		val->intval = battery->current_avg;
 		break;
 	/* charging mode (differ from power supply) */
 	case POWER_SUPPLY_PROP_CHARGE_NOW:
